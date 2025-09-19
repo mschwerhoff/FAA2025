@@ -27,17 +27,20 @@ example : P → (Q → P) := by
 
 -- Exercise 4: Transitivity of implication
 example : (P → Q) → (Q → R) → (P → R) := by
-  intro hPQ
-  intro hQR
-  intro hP
+  -- [Variant: Forwards reasoning]
+  intro hPQ hQR hP
+  -- QUESTION: At this point in the proof, hP is of type P ...
   apply hPQ at hP
+  --           .. but not it is of type Q.
+  --           It doesn't feel right that the type of a term changes
+  --           throughout a proof. Is there a way to avoid this?
+  --           Or a more idiomatic way how to do this in Lean?
   apply hQR at hP
   exact hP
 
 example : (P → Q) → (Q → R) → (P → R) := by
-  intro hPQ
-  intro hQR
-  intro hP
+  -- [Variant: Backwards reasoning]
+  intro hPQ hQR hP
   apply hQR
   apply hPQ
   apply hP
@@ -49,6 +52,7 @@ example (hP : P) (hQ : Q) : P ∧ Q := by
   . exact hQ
 
 example (hP : P) (hQ : Q) : P ∧ Q := by
+-- [Alternative proof]
   constructor
   . apply hP
   . apply hQ
@@ -64,9 +68,13 @@ example : P ∧ Q ↔ Q ∧ P := by
     exact hQP
 
 example : P ∧ Q ↔ Q ∧ P := by
+  -- [Alternative proof]
   constructor
   . intro hPQ
     exact (And.symm hPQ)
+    -- QUESTION: My understanding is that And.symm applied to P ∧ Q
+    --           yields Q ∧ P, which is exactly what is needed to close
+    --           the proof goal. Is that correct?
   . intro hQP
     exact (And.symm hQP)
 
@@ -91,16 +99,19 @@ variable (P Q R S : Prop)
 
 -- Example: basic apply usage
 example (h1 : P → Q) (h2 : P) : Q := by
+  -- [Variant: Backwards reasoning]
   apply h1
   exact h2
 
 example (h1 : P → Q) (h2 : P) : Q := by
-  apply h1 at h2
+ -- [Variant: Forwards reasoning]
+  apply h1 at h2 -- Type of h2 changes from P to Q
   exact h2
 
 example (h1 : P → Q) (h2 : P) : Q := by
-  have hQ: Q := by
-    apply h1 at h2
+  -- [Variant: Forwards reasoning]
+  have hQ: Q := by -- Local scope
+    apply h1 at h2 -- Type change of h2 confined to local scope
     exact h2
   exact hQ
 
@@ -119,27 +130,28 @@ example (h0 : P ∧ Q ∧ R) (h : P → Q → R → S) : S := by
   --apply hR
   all_goals trivial
 
-
 -- Exercise 10: Mixed apply and intro
 example : (P → Q) → (Q → R) → (P → R) := by
-  intro hPQ
-  intro hQR
-  intro hP
+  -- [Variant 1: Forwards reasoning]
+  intro hPQ hQR hP
   apply hPQ at hP
   apply hQR at hP
   exact hP
 
 example : (P → Q) → (Q → R) → (P → R) := by
+  -- [Variant 2: Backwards reasoning]
   intro hPQ hQR hP
   apply hQR
   apply hPQ
   apply hP
 
 example : (P → Q) → (Q → R) → (P → R) := by
+  -- [Variant 3: Fowards reasoning with syntactically different term applications]
   intro hPQ hQR hP
   exact hQR (hPQ hP)
 
 example : (P → Q) → (Q → R) → (P → R) := by
+  -- [Variant 4: Fowards reasoning with yet another term app. syntax]
   intro hPQ hQR hP
   -- have hQ : Q := (hPQ hP)
   -- have hQ := (hPQ hP)
@@ -149,13 +161,22 @@ example : (P → Q) → (Q → R) → (P → R) := by
   exact hR
 
 example : (P → Q) → (Q → R) → (P → R) := by
-  exact fun a1 a2 a3 => a2 (a1 a3)
-
-
+  -- [Variant 5: Forwards reasoning with ... a function as witness?]
+  -- QUESTION: Is it fair to say that we produce a witness (the function)
+  --           for the proof goal?
+  --           To me, this variant seems most similar to variant 3,
+  --           except that we "hide" the step "intro hPQ hQR hP"
+  --           by declaring corresponding function parameters.
+  exact fun hPQ hQR hP => hQR (hPQ hP)
 
 -- Hint: Chain the implications by working backwards from the goal
 example (P Q R : Prop) : ((P → Q) ∧ (Q → R)) → (P → R) := by
-  sorry
+  intro lhs
+  intro hP
+  obtain ⟨hPQ, hQR⟩ := lhs
+  apply hPQ at hP
+  apply hQR at hP
+  exact hP
 
 
 end ApplyTactic
