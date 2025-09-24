@@ -83,5 +83,8 @@ lemma Q5 (n k : ℕ) (h1 : k ∣ 21 * n + 4) (h2 : k ∣ 14 * n + 3) : k ∣ 1 :
   have h5 : 3 * (14 * n + 3) = 2 * (21 * n + 4) + 1 := by ring
   -- Hint: Nat.dvd_add_right is helpful here
   rewrite [h5] at h4 -- changes type of h4
+    -- QUESTION: I find it confusing that a term changes its type (here: h4)
+    -- I could localise this effect, e.g. to a "have" sub-scope — but is there
+    -- no alternative that does not change the type of terms?
   have h6 := Iff.mp (Nat.dvd_add_right h3) h4
   exact h6
