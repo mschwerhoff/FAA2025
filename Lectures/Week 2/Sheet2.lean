@@ -12,7 +12,7 @@ set_option tactic.hygienic false
 -/
 
 open Set
-variable {α : Type*}
+variable {α : Type*} -- Asteriks means that the type is of kind 1 (the lowest in the type hierarchy)
 variable (A B C D: Set α)
 
 -- Example: Left/Right tactics
@@ -40,11 +40,30 @@ example: ∀ x ∈ A ∪ B, x ∈ A ∪ B ∪ C:= by
   right
   exact h
 
+example: ∀ x ∈ A ∪ B, x ∈ A ∪ B ∪ C:= by
+  intro x hx
+  rewrite [mem_union]
+  left
+  exact hx
+
 -- Exercise 5: Cases tactics. You are allowed to use *only* these two lemmas.
 #check mem_union
 #check subset_def
 
-lemma my_union_subset_imp :  A ⊆ C ∧ B ⊆ C → A ∪ B ⊆ C := by sorry
+lemma my_union_subset_imp :  A ⊆ C ∧ B ⊆ C → A ∪ B ⊆ C := by
+  intro lhs
+  obtain ⟨left, right⟩ := lhs
+  rewrite [subset_def]
+  intro x hx
+  rewrite [subset_def] at left
+  --obtain ⟨x1, hx1⟩ := left
+  rewrite [subset_def] at right
+  rewrite [mem_union] at hx
+  cases hx
+  . apply left
+    exact h
+  . apply right
+    exact h
 
 -- Extend my_union_subset_imp to my_union_subset_iff
 -- You are allowed to use *only* these two lemmas.
@@ -70,7 +89,18 @@ lemma my_union_subset_iff:  A ⊆ C ∧ B ⊆ C ↔ A ∪ B ⊆ C := by
   exact hx
 
 -- Exercise 6: you may want to use my_union_subset_iff
-example : B ⊆ A → C ⊆ A → B ∪ C ⊆ A := by sorry
+example : B ⊆ A → C ⊆ A → B ∪ C ⊆ A := by
+  intro left mid
+  rewrite [subset_def]
+  intro x x_subset_B_union_C
+  rewrite [subset_def] at left
+  rewrite [subset_def] at mid
+  rewrite [mem_union] at x_subset_B_union_C
+  cases x_subset_B_union_C
+  . apply left at h
+    exact h
+  . apply mid at h
+    exact h
 
 /-! New tactics
  * `ext`  -- extensionality. Proving that two functions are identical. Since sets are functions in Lean, `ext` can be used to prove set equality.
@@ -85,6 +115,26 @@ lemma inter_comm: A ∩ B = B ∩ A := by
   rintro ⟨a,b⟩
   exact ⟨b,a⟩
 
+lemma inter_comm2: A ∩ B = B ∩ A := by
+  ext x
+  constructor
+  . intro h
+    rw [@mem_inter_iff]
+    obtain ⟨h1, h2⟩ := h
+    constructor
+    exact h2
+    exact h1
+  . intro h
+    rewrite [mem_inter_iff] at h
+    -- Option 1
+    obtain ⟨x_in_B, x_in_A⟩ := h
+    constructor
+    . exact x_in_A
+    . exact x_in_B
+    -- -- Option 2
+    -- obtain ⟨x_in_B, x_in_A⟩ := h
+    -- exact (mem_inter x_in_A x_in_B)
+
 -- example
 lemma absorption_law: A ∩ (A ∪ B) = A := by
   ext x
@@ -98,4 +148,18 @@ lemma absorption_law: A ∩ (A ∪ B) = A := by
       exact a
 
 -- Exercise 7
-lemma union_comm : A ∪ B = B ∪ A := by sorry
+lemma union_comm : A ∪ B = B ∪ A := by
+  ext x
+  constructor
+  . intro lhs
+    rewrite [mem_union] at lhs
+    rewrite [mem_union]
+    cases lhs
+    . right
+      exact h
+    . left
+      exact h
+  . intro rhs
+    rewrite [mem_union] at rhs
+    rewrite [mem_union]
+    exact (Or.symm rhs) -- alternative to the more manual proof used in the first case

@@ -46,10 +46,10 @@ def IsEven (n : ℤ) : Prop := ∃ k, n = 2 * k
 -- If there exists an even number `n` that is greater than 10,
 -- then there must exist some integer `m` that is greater than 5.
 example (h : ∃ n : ℤ, IsEven n ∧ n > 10) : ∃ m : ℤ, m > 5 := by
-  -- Use `obtain` to get the number `n` and its properties from `h`.
-  -- The syntax is: obtain ⟨n, hn_prop⟩ := h
-  sorry
-
+  obtain ⟨n, conj⟩ := h
+  obtain ⟨even, ngt⟩ := conj
+  use n
+  omega -- tactics for integer arithmetics
 
 def IsOdd (n : ℤ) : Prop := ∃ k, n = 2 * k + 1
 
@@ -63,4 +63,12 @@ example (n:ℤ) (h : IsEven n) :  IsOdd (n+1) := by
 
 -- Exercise 0. Prove that the sum of two even numbers is even.
 example (a b:ℤ) (h_a : IsEven a) (h_b : IsEven b) : IsEven (a + b) := by
-  sorry
+  rewrite [IsEven] at h_a
+  rewrite [IsEven] at h_b
+  obtain ⟨ak, A⟩ := h_a
+  obtain ⟨bk, B⟩ := h_b
+  rewrite [IsEven]
+  use (ak + bk)
+  rw [A]
+  rw [B]
+  exact Eq.symm (Int.mul_add 2 ak bk)
