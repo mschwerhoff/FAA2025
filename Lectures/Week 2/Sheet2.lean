@@ -110,10 +110,10 @@ example : B ⊆ A → C ⊆ A → B ∪ C ⊆ A := by
 lemma inter_comm: A ∩ B = B ∩ A := by
   ext x
   constructor
-  rintro ⟨a,b⟩
-  exact ⟨b,a⟩
-  rintro ⟨a,b⟩
-  exact ⟨b,a⟩
+  . rintro ⟨a,b⟩
+    exact ⟨b,a⟩
+  . rintro ⟨a,b⟩
+    exact ⟨b,a⟩
 
 lemma inter_comm2: A ∩ B = B ∩ A := by
   ext x
