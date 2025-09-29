@@ -151,6 +151,7 @@ theorem P2 : A ∩ (B ∪ C) = (A ∩ B) ∪ (A ∩ C) := by
 
 /-
   Proof strategy for P3 is:
+  Analogous to the strategy for P2, just with more (and nested) case distinctions.
 -/
 
 theorem P3 : (A ∪ B) ∩ (A ∪ C) ∩ (B ∪ C) = (A ∩ B) ∪ (A ∩ C) ∪ (B ∩ C) := by
@@ -216,17 +217,50 @@ theorem P3 : (A ∪ B) ∩ (A ∪ C) ∩ (B ∪ C) = (A ∩ B) ∪ (A ∩ C) ∪
 
 /-
   Proof strategy for P4 is:
+  * Forward direction
+    * Use equality "A ∪ X = B" to make the proof goal "A ⊆ A ∪ X", then construct the latter via subset_union_left
+  * Reverse direction
+    * Treat proof goal "A ∪ B \ A = B" as bi-implication "x ∈ A ∪ B \ A ↔ x ∈ B"
+    * Prove bi-implication in two directions
+      1) Show "x ∈ A ∪ B \ A  →  x ∈ B" by
+         * Assuming LHS
+         * Treating LHS "x ∈ A ∪ B \ A" as disjunction "x ∈ A, or x ∈ B \ A"
+         * Branching over disjunction, and using suitable assumptions to obtain required disjunct
+      2) Show "x ∈ B  →  x ∈ A ∪ B \ A": similar, but more involved
 -/
 
 theorem P4 : (∃ X : Set α, A ∪ X = B) ↔ A ⊆ B := by
   constructor
   · -- Forward direction: if there exists X such that A ∪ X = B, then A ⊆ B
-    sorry
+    intro lhs
+    obtain ⟨X, hx⟩ := lhs
+    have h := @subset_union_left α A X
+    rewrite [hx] at h -- Use "hx : A ∪ X = B" to rewrite "h" from "A ⊆ A ∪ X" to "A ⊆ B".
+                      -- I.e. in "h", replace "A ∪ X" with "B" by using the equality from "hx".
+    exact h
   · -- Reverse direction: if A ⊆ B, then there exists X such that A ∪ X = B
     intro h           -- "Assume A ⊆ B"
     use B \ A         -- "Let X = B \ A"
     ext x
-    sorry
+    constructor
+    . -- Show x ∈ A ∪ B \ A  →  x ∈ B
+      intro lhs
+      cases lhs
+      . apply h
+        exact h_1
+      . rewrite [mem_diff] at h_1
+        obtain ⟨x_in_B, _⟩ := h_1
+        exact x_in_B
+    . -- Show x ∈ B  →  x ∈ A ∪ B \ A
+      intro lhs
+      rewrite [mem_union]
+      rewrite [subset_def] at h
+      rewrite [mem_diff]
+      by_cases ha : x ∈ A
+      . left
+        exact ha
+      . right
+        exact (And.intro lhs ha)
 end
 
 section
