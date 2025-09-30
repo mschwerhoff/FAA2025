@@ -288,11 +288,33 @@ def IsDisjoint (A B: Finset α) : Prop := A ∩ B = ∅
 
 /-
   Proof strategy for P5 is:
+  1. Obtain "#(A ∪ B) = #A + #B" by
+      a) Using card_eq_zero to obtain #(A ∩ B) = 0 ↔ A ∩ B = ∅.
+         Since A ∩ B = ∅ is known, we can conclude #(A ∩ B) = 0.
+      b) Using card_union to obtain (A ∪ B) = #A + #B - #(A ∩ B)
+         Since #(A ∩ B) = 0 is known, we can conclude (A ∪ B) = #A + #B - 0,
+         which is trivially our proof goal.
+  2. With #(A ∪ B) = #A + #B we (effectively) aim to prove #(A ∪ B) = 2 * k for some k.
+     This means proving #A + #B = 2 * k, and since #A = #B, it means proving #B + #B = 2 * k.
+     Using #B for k and Nat.two_mul, we can conclude the proof.
 -/
 
 theorem P5 (U : Finset α) (A B : Finset α)
 (hAB : IsDisjoint A B) (hcard : #A = #B) (htotal : A ∪ B = U) : IsEven (#U) := by
   -- Hint: First prove the following claim:
-  have AB_eq: #(A ∪ B) = #A + #B := by sorry
+  have AB_eq: #(A ∪ B) = #A + #B := by
+    rewrite [IsDisjoint] at hAB
+    have h1 := @card_eq_zero α (A ∩ B) -- QUESTION: I don't properly understand the difference between @foo ...
+    have h2 := card_union A B          --           ... and just foo. Could you please explain this in the lecture?
+    have h3 := h1.mpr hAB
+    rewrite [h2]
+    rewrite [h3]
+    trivial
   -- Then use AB_eq to finish the proof
-  sorry
+  rewrite [← htotal]
+  rewrite [AB_eq]
+  rewrite [IsEven]
+  rewrite [hcard]
+  use #B
+  rewrite [Nat.two_mul]
+  trivial
