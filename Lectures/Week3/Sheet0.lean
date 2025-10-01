@@ -40,6 +40,11 @@ example {a b x c d : ℝ} : x ^ 2 * a + c ≤ x ^ 2 * b + d := by
   sorry
   sorry
 
+example {a b c d : ℝ} (h1 : a < b) (h2 : b ≤ c) : a + d ≤ c + d := by
+  calc
+    a + d ≤ b + d := by grw [h1]
+    _     ≤ c + d := by grw [h2]
+
 -- Example on grw/rel/gcongr
 example {a b x c d : ℝ} (h1 : a ≤ b) (h2 : c ≤ d) :
     x ^ 2 * a + c ≤ x ^ 2 * b + d := by sorry
@@ -59,6 +64,19 @@ theorem power_two_ih (n : ℕ) (ih : 5 ≤ n) (h : 2 ^ n > n ^ 2) : 2 ^ (n + 1) 
     2 * n + 1 < 5 * n := by omega
     _ ≤ n*n := by grw [ih]
 
+theorem power_two_ih2 (n : ℕ) (ih : 5 ≤ n) (h : 2 ^ n > n ^ 2) : 2 ^ (n + 1) > (n + 1) ^ 2 := by
+  rw [Nat.two_pow_succ n]
+  rw [add_sq n 1]
+  grw [h]
+  simp
+  rw [add_assoc]
+  simp
+  rw [Nat.two_mul][Nat.two_mul][Nat.two_mul][@Nat.add_lt_iff_lt_sub_right][@Nat.add_lt_iff_lt_sub_right][@Nat.add_lt_iff_lt_sub_right][@Nat.add_lt_iff_lt_sub_right][@Nat.add_lt_iff_lt_sub_right][@Nat.add_lt_iff_lt_sub_right][@Nat.add_lt_iff_lt_sub_right][@Nat.add_lt_iff_lt_sub_right][@Nat.add_lt_iff_lt_sub_right][@Nat.add_lt_iff_lt_sub_right][@Nat.add_lt_iff_lt_sub_right][@Nat.add_lt_iff_lt_sub_right][@Nat.add_lt_iff_lt_sub_right][@Nat.add_lt_iff_lt_sub_right][@Nat.add_lt_iff_lt_sub_right][@Nat.add_lt_iff_lt_sub_right][Nat.pow_two n]
+  calc
+    2 * n + 1 < 5 * n := by omega
+    _         ≤ n * n := by grw [ih]
+
+
 --Alternate Proof
 theorem power_two_ih_alt (n : ℕ) (ih : 5 ≤ n) (h : 2 ^ n > n ^ 2) : 2 ^ (n + 1) > (n + 1) ^ 2 := by
    calc 2 ^ (n + 1) = 2 * 2 ^ n := by ring
@@ -72,7 +90,28 @@ theorem power_two_ih_alt (n : ℕ) (ih : 5 ≤ n) (h : 2 ^ n > n ^ 2) : 2 ^ (n +
 
 -- Exercise 1
 -- try without omega
-theorem power_two_linear (n : ℕ) (ih : 3 ≤ n) (h : 2*n < 2^n) : 2*(n+1) < 2^(n+1) := by sorry
+theorem power_two_linear (n : ℕ) (ih : 3 ≤ n) (h : 2*n < 2^n) : 2*(n+1) < 2^(n+1) := by
+  calc 2*(n+1) = 2*n+2 := by group
+  _ < 2^n+2 := by gcongr
+  _ < 2^n*2 := by linarith
+  _ = 2^(n+1) := by ring
+
+theorem power_two_linear_alt (n : ℕ) (ih : 3 ≤ n) (h : 2*n < 2^n) : 2*(n+1) < 2^(n+1) := by
+  rw [Nat.left_distrib]
+  rw [Nat.two_pow_succ]
+  grw [h]
+  simp
+  calc
+  2 < 2 ^ n := by sorry
+
+theorem power_two_linear_alt2 (n : ℕ) (ih : 3 ≤ n) (h : 2*n < 2^n) : 2*(n+1) < 2^(n+1) := by
+  rw [Nat.mul_add_one 2 n]
+  rw [Nat.pow_add_one']
+  grw [h]
+  rw [Nat.two_mul (2 ^ n)]
+  simp
+  grw [← ih]
+  repeat norm_num
 
 -- Exericse 2
 -- prove this without omega

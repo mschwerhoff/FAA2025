@@ -1,5 +1,5 @@
 import Mathlib.Tactic -- imports all of the tactics in Lean's maths library
-import Lectures.Week3.Sheet0
+-- import Lectures.Week3.Sheet0
 set_option autoImplicit false
 
 
@@ -35,8 +35,17 @@ def I2 : ℕ → ℕ
   | 0 => 0
   | n + 1 => I2 n + 2
 
+def I2' (n : ℕ) : ℕ := match n with
+  | 0 => 0
+  | n + 1 => I2 n + 2
+
 #eval [I2 0, I2 1, I2 2]
-example (n:ℕ): I2 n = 2*n := by sorry
+example (n:ℕ): I2 n = 2*n := by
+  induction' n with n ih
+  · rw [I2] -- unfold def I2 --> done right away
+  · rw [I2] -- unfold def I2
+    rw [ih] -- substitute equality
+    trivial -- done
 
 -- Another example
 example (n:ℕ): Even (I2 n) := by
@@ -64,11 +73,34 @@ def S : ℕ → ℕ
 #eval S 3
 
 #check mul_comm
+#check Nat.left_distrib
 
 -- Exercise 3
-lemma Sn_two (n : ℕ) : 2*(S n) = n * (n + 1)  := by sorry
+lemma Sn_two (n : ℕ) : 2*(S n) = n * (n + 1)  := by
+  induction' n with n ih
+  · rw [S]
+  · unfold S
+    rw [Nat.left_distrib]
+    rw [ih]
+    -- ring_nf -- Suffices at this point
+    -- goal: n * (n + 1) + 2 * (n + 1) = (n + 1) * (n + 1 + 1)
+    calc  n * (n + 1) + 2 * (n + 1)
+        = (n * n) + n + 2 * (n + 1) := by group
+      _ = (n * n) + n + 2 * n + 2 := by group
+      _ = n^2 + n + 2 * n + 2 := by group
+      _ = n^2 + 2 * n + n + 2 := by group
+      _ = n^2 + n + (n + 1) + (n + 1) := by group
+      _ = (n + 1) * n + (n + 1) + (n + 1) := by group
+      _ = (n + 1) * (n + 1 + 1) := by group -- syntactically the RHS of the desired equality
 
-example (n : ℕ) : (S n) = n * (n + 1)/2  := by sorry
+example (n : ℕ) : (S n) = n * (n + 1)/2  := by
+  induction' n with n ih
+  · unfold S
+    trivial
+  · unfold S
+    rw [ih]
+    ring_nf
+    omega
 
 -- It is much easier to work with type ℚ
 -- Example
@@ -100,16 +132,35 @@ for `induction'`). -/
 #check Nat.decreasingInduction
 #check Nat.div2Induction
 
+-- From Sheet0
+theorem power_two_ih (n : ℕ) (ih : 5 ≤ n) (h : 2 ^ n > n ^ 2) : 2 ^ (n + 1) > (n + 1) ^ 2 := by sorry
+
 -- Example
 example : ∀ n ≥ 5, 2 ^ n > n ^ 2 := by
   intro n h
   induction' n,h using Nat.le_induction with n ih
-  · simp
-  · rename_i h
+  · -- To show (base case): 2 ^ 5 > 5 ^ 2
+    trivial
+  · -- To show: 2 ^ (n + 1) > (n + 1) ^ 2
+    rename_i h
     exact power_two_ih n ih h
 
 -- Exercise 4
-lemma le_fact (n : ℕ) : 1 ≤ (n)! := by sorry
+lemma le_fact (n : ℕ) : 1 ≤ (n)! := by
+  induction' n with n ih
+  · unfold factorial
+    trivial
+  · unfold factorial
+    grw [← ih]
+    simp
+    -- rw [Nat.right_distrib]
+    -- rw [Nat.one_mul]
+    -- -- goal: 1 ≤ n * n ! + n !
+    -- calc 1 ≤ (n)! := by exact ih
+    --      _ ≤ (n)! + (n)! := by simp
+    --      _ ≤ n * (n)! + (n)! := by ring_nf
+    -- -- rw [Nat.Simproc.le_add_le 1 ih]
+    -- -- trivial
 
 -- Exercise 5
 example (n : ℕ) : 2^n ≤ (n+1)! := by sorry
