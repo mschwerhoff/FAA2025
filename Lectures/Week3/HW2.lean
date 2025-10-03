@@ -43,8 +43,96 @@ notation:10000 n "!" => factorial n
 
 def isEven (n : ℕ) : Prop := ∃ k, n = 2*k
 
-theorem P2 (n : ℕ) : isEven (n)! ↔ n ≥ 2 := by sorry
-theorem P3 : ∀ n > 0 , 3 ^ n > n ^ 2 := by sorry
+#eval (0)!
+#eval (1)!
+#eval (2)!
+#eval (3)!
+#eval (4)!
+#eval (5)!
+#eval (6)!
+
+#check Nat.one_le_iff_ne_zero
+
+theorem P2 (n : ℕ) : isEven (n)! ↔ n ≥ 2 := by
+  constructor
+  . -- Direction isEven n! → n ≥ 2
+    induction' n with n ih
+    · unfold isEven
+      norm_num
+      intro x h
+      unfold factorial at h
+      omega
+    · intro lhs
+      unfold isEven at lhs
+      obtain ⟨k1, hk1⟩ := lhs
+      unfold factorial at hk1
+      unfold isEven at ih
+      by_cases (n = 0) -- QUESTION: I find this case split a bit annoying, in particular
+                       --           since "simp_all" afterwards still feels like magic.
+                       --           Would be great to see an alternative, more accessible proof.
+      . simp_all
+      . simp_all
+        rename_i n_neq_zero
+        exact Nat.one_le_iff_ne_zero.mpr n_neq_zero
+  . -- Direction n ≥ 2 → isEven n!
+    induction' n with n ih
+    . intro lhs
+      unfold isEven
+      unfold factorial
+      simp_all
+    . intro lhs
+      unfold isEven at ih
+      match n with
+      | 0 =>
+        simp_all
+      | 1 =>  -- QUESTION: Can I merge cases 0 and 1? E.g. via a pattern like "m < 2"?
+        unfold factorial isEven
+        simp_all
+      | m + 2 =>
+        unfold factorial isEven
+        simp_all
+        obtain ⟨k, hk⟩ := ih
+        use (m + 2 + 1) * k
+        simp_all
+        ring_nf
+
+
+-- Helper lemma I need for proving P3
+lemma L1 : ∀ n > 0 , 2*n + 1 ≤ 3^n * 2 := by
+  intro n
+  induction' n with n ih
+  . trivial
+  . intro lhs
+    by_cases (n = 0)
+    . simp_all
+    . omega
+
+#check L1
+#check add_le_add_left
+#check add_le_add_right
+
+theorem P3 : ∀ n > 0 , 3 ^ n > n ^ 2 := by
+  intro n
+  induction' n with n ih
+  . simp_all
+  . intro lhs
+    simp_all
+    by_cases (n = 0)
+    . simp_all
+    . rename_i n_not_zero
+      have ih_lhs  : 0 < n := Nat.pos_of_ne_zero n_not_zero
+      have ih_rhs := by exact ih ih_lhs
+      have w : 2*n + 1 ≤ 3^n * 2 := by exact ((L1 n) ih_lhs)
+      calc
+        (n + 1)^2 = n^2 + 2 * n + 1 := by ring
+        _         < 3^n + 2 * n + 1 := add_lt_add_right (add_lt_add_right ih_rhs _) _ -- or by gcongr
+        _         = 3^n + (2 * n + 1) := by rw [add_assoc]
+        _         ≤ 3^n + 2 * 3^n     := by omega -- QUESTION: How can I use "w" more explicitly,
+                                                  -- without the magic of omega?
+        _         = 2 * 3^n + 3^n     := by rw [Nat.add_comm]
+        _         = 3 * 3^n           := by rw [← Nat.add_one_mul]
+        _         = 3^n * 3           := by rw [Nat.mul_comm]
+        _         = 3 ^ (n + 1)       := by rw [pow_succ]
 
 -- # Problem 4:
 -- in this problem, you are asked to solve the following recurrence relation.
