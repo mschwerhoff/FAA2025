@@ -13,15 +13,6 @@ def SumOdd : ℕ → ℕ
   | 0 => 0
   | n + 1 => SumOdd n + (2*n +1)
 
-#eval SumOdd 0
-#eval SumOdd 1
-#eval SumOdd 2
-#eval SumOdd 3
-#eval SumOdd 4
-#eval SumOdd 5
-#eval SumOdd 6
-#eval SumOdd 7
-
 theorem P1 (n : ℕ) : SumOdd (n) = n^2 := by
   induction' n with n ih
   · -- Base case
@@ -42,14 +33,6 @@ def factorial : ℕ → ℕ
 notation:10000 n "!" => factorial n
 
 def isEven (n : ℕ) : Prop := ∃ k, n = 2*k
-
-#eval (0)!
-#eval (1)!
-#eval (2)!
-#eval (3)!
-#eval (4)!
-#eval (5)!
-#eval (6)!
 
 #check Nat.one_le_iff_ne_zero
 
@@ -82,19 +65,36 @@ theorem P2 (n : ℕ) : isEven (n)! ↔ n ≥ 2 := by
       simp_all
     . intro lhs
       unfold isEven at ih
-      match n with
-      | 0 =>
-        simp_all
-      | 1 =>  -- QUESTION: Can I merge cases 0 and 1? E.g. via a pattern like "m < 2"?
-        unfold factorial isEven
-        simp_all
-      | m + 2 =>
-        unfold factorial isEven
+      by_cases n ≥ 2
+      . unfold factorial isEven
         simp_all
         obtain ⟨k, hk⟩ := ih
-        use (m + 2 + 1) * k
+        use (n + 1) * k
         simp_all
         ring_nf
+      . unfold factorial isEven
+        simp_all
+        have n_eq_one : n = 1 := by decide +revert -- conclude from 1 ≤ n and n < 2
+        rw [n_eq_one]
+        -- simp_all -- suffices at this point
+        unfold factorial factorial
+        ring_nf
+        use 1
+        trivial
+      ---- Alternative case split: split n < 2 into two (then slightly simpler cases) n = 0 and n = 1
+      -- match n with
+      -- | 0 =>
+      --   simp_all
+      -- | 1 =>  -- QUESTION: Can I merge cases 0 and 1? E.g. via a pattern like "m < 2"?
+      --   unfold factorial isEven
+      --   simp_all
+      -- | m + 2 =>
+      --   unfold factorial isEven
+      --   simp_all
+      --   obtain ⟨k, hk⟩ := ih
+      --   use (m + 2 + 1) * k
+      --   simp_all
+      --   ring_nf
 
 
 -- Helper lemma I need for proving P3
@@ -144,10 +144,48 @@ theorem P3 : ∀ n > 0 , 3 ^ n > n ^ 2 := by
 #check Nat.sub_add_cancel
 #check Nat.le_log_of_pow_le
 
+#check Nat.strong_induction_on
+#check Nat.div_lt_of_lt
+#check Nat.log_mono_right
+
+def G : ℕ → ℕ
+  | 0 => 0
+  | n + 1 => G (n / 2) + 1
+
+theorem P4 (n : ℕ) : G n ≤ Nat.log 2 (n + 1) := by
+  induction n using Nat.strong_induction_on
+  rename' n_1 => n, a => ih
+  if h : n = 0 then
+    unfold G
+    simp_all
+  else if h : n = 1 then
+    unfold G
+    simp_all
+    norm_num
+  else
+    rename_i h'
+    have n_geq_two : 2 ≤ n := by omega
+    unfold G
+
+    cases n with
+    | zero =>
+      contradiction
+    | succ m =>
+      simp_all
+      rw [Nat.add_assoc m 1 1]
+      unfold Nat.log
+      simp
+      -- Close proof by suitable IH instantiation
+      have ih_lhs : m/2 < m + 1 := by calc -- omega suffices
+        m/2 ≤ m := by exact Nat.div_le_self m 2
+          _ < m + 1 := by exact lt_add_one m
+      exact ih (m/2) ih_lhs -- Instantiate IH
+
+
 -- # Problem 5
 -- in this problem, you are asked to solve the following recurrence relation.
 -- f(n) = 2*f(n-1) - f(n-2) + 2
--- where f(1) = 1 and f(2) = 4
+-- where f(0) = 1 and f(1) = 1
 -- Prove that that f(n) = n^2 - n + 1
 
 -- state the formal theorem and prove it
