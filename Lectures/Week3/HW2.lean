@@ -150,9 +150,9 @@ theorem P3 : ∀ n > 0 , 3 ^ n > n ^ 2 := by
 
 def G : ℕ → ℕ
   | 0 => 0
-  | n + 1 => G (n / 2) + 1
+  | n + 1 => G (n / 2) + 1 -- 🚨🚨🚨 Must be G ((n + 1) / 2) + 1
 
-theorem P4 (n : ℕ) : G n ≤ Nat.log 2 (n + 1) := by
+theorem P4 (n : ℕ) : G n ≤ Nat.log 2 (n + 1) := by -- 🚨🚨🚨 ≤ (Nat.log 2 n) + 1 ????
   induction n using Nat.strong_induction_on
   rename' n_1 => n, a => ih
   if h : n = 0 then
@@ -190,3 +190,94 @@ theorem P4 (n : ℕ) : G n ≤ Nat.log 2 (n + 1) := by
 
 -- state the formal theorem and prove it
 -- Hint: you may find `zify` tactic useful
+
+#check Nat.lt_add_of_pos_right
+#check Nat.sub_one_add_one
+#check Nat.le_self_pow
+
+def F : ℕ → ℕ
+  | 0 => 1
+  | 1 => 1
+  | n + 2 => 2 * F ((n + 2) - 1) - F ((n + 2) - 2) + 2
+
+theorem P5 (n : ℕ) : F n = n^2 - n + 1 := by
+  induction n using Nat.strong_induction_on
+  rename' n_1 => n, a => ih
+  unfold F
+  cases n with
+  | zero => -- n = 0
+    simp_all
+  | succ n' => -- n = n' + 1
+    cases n' with
+    | zero => -- n = 1
+      simp_all
+    | succ n'' => -- n = n'' + 2 ≥ 2
+      norm_num
+      rename' n'' => x
+
+      rw [Nat.add_assoc x 1 1] at ih
+      rw [show 1 + 1 = 2 from rfl] at ih
+      rw [Nat.add_assoc x 1 1]
+      rw [show 1 + 1 = 2 from rfl]
+
+      ---- Instantiate IH for m := x
+      -- have ih_left : x < x + 2 := by simp -- Suffices
+      -- have ih_left : x < x + 2 := Nat.lt_add_of_pos_right (show 0 < 2 by trivial) -- Implicit args also work
+      have ih_left : x < x + 2 := @Nat.lt_add_of_pos_right 2 x (show 0 < 2 by trivial)
+      have h : F x = x^2 - x + 1 := ih x ih_left
+      rw [h]
+      ---- Analogous: Instantiate IH for m := x + 1, but using different Lean syntax/constructs
+      have h' : F (x + 1) = (x + 1)^2 - (x + 1) + 1 :=
+        ih (x + 1) (show x + 1 < x + 2 by simp)
+      rw [h']
+
+      -- QUESTION: I tried using "zify", but it seemed to affect the outermost term, not
+      --           subexpressions of the shape "(a - b) + b" I want to simplify.
+      --           What's the right way of using "zify" here?
+
+      simp_all -- Explicitly instantiating and substiting (rw) the IH twice is actually not necessary:
+               -- if just using simp_all, these instantiations will automatically happen.
+      by_cases ch : (x = 0)
+      . simp_all
+      . rw [Nat.sub_add_eq ((x + 1) ^ 2) x 1]
+        -- have w : (x + 1) ^ 2 - x ≠ 0 := by sorry
+        -- rw [@Nat.sub_one_add_one ((x + 1) ^ 2 - x) w]
+        rw [Nat.sub_one_add_one ?_]
+        rw [Nat.sub_add_eq (2 * ((x + 1) ^ 2 - x)) (x ^ 2 - x) 1]
+        rw [Nat.sub_one_add_one ?_] -- Introduces a second goal due to yet undischarged side condition
+        . -- main goal
+          rw [mul_tsub 2 ((x + 1) ^ 2) x]
+          rw [Nat.sub_right_comm (2 * (x + 1) ^ 2) (2 * x) (x ^ 2 - x)]
+          rw [tsub_tsub_eq_add_tsub_of_le ?_]
+          . -- main goal
+            rw [Nat.two_mul ((x + 1) ^ 2)]
+            rw [add_sq x 2]
+            rw [add_sq x 1]
+            -- NOTE: At this point, omega suffices
+            simp_all
+            exact calc -- Close the proof in a human-readable way.
+                       -- QUESTION: How can I systematically replace omega by specific lemma applications?
+                       --           I tried to replace omega by rw?, apply?, rw??, but then I just get a long
+                       --           list of "random" suggestions.
+                  x^2 + 2*x + 1 + (x^2 + 2*x + 1) + x - x^2 - 2*x
+              _ = x^2       + 1 + (x^2 + 2*x + 1) + x - x^2        := by omega
+              _ =             1 + (x^2 + 2*x + 1) + x              := by omega
+              _ =             1 +  x^2 + 2*x + 1  + x              := by omega
+              _ =                  x^2 + 2*x + 2  + x              := by omega
+              _ =                  x^2 + 3*x + 2                   := by omega
+              _ =                  x^2 + 4*x + 2  - x              := by omega
+              _ =                  x^2 + 2*x*2 + 2 - x             := by omega
+
+          . -- side condition of tsub_tsub_eq_add_tsub_of_le
+            -- Knowing x ≠ 0, i.e. 1 ≤ x,
+            --   prove x ≤ x ^ 2
+            apply Nat.le_self_pow
+            trivial
+        . -- side condition of 2nd Nat.sub_one_add_one
+          rw [Nat.sub_ne_zero_iff_lt]
+          ring_nf
+          omega
+        . -- side condition of 1st Nat.sub_one_add_one
+          rw [Nat.sub_ne_zero_iff_lt]
+          apply Nat.le_self_pow
+          trivial
