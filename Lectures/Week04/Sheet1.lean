@@ -83,8 +83,22 @@ Define T(m,n):
   Prove that T(m,n) ≤ 2^{m+n}
 -/
 
-def T : ℕ → ℕ  → ℕ := sorry
-theorem solve_T (m n: ℕ):  T m n ≤ 2^(m+n)  := by sorry
+def T : ℕ → ℕ → ℕ
+  | _, 0 => 1 -- Single-line alternative:
+  | 0, _ => 1 -- | _, 0 | 0, _ => 1
+  | m+1, n+1 => T m (n+1) + T (m+1) n
+  -- | m + 1, n + 1 => T (m-1) n + T m (n-1) -- Alternative but equivalent definition makes proof harder :-/
+
+theorem solve_T (m n: ℕ):  T m n ≤ 2^(m+n) := by
+  fun_induction T
+  all_goals (expose_names)
+  . -- simp_all
+    exact Nat.one_le_two_pow
+  . -- simp_all
+    exact Nat.one_le_two_pow
+  . grw [ih2,ih1]
+    --simp_all
+    grind
 
 -- # Exercise 1.2
 /-
