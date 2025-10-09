@@ -139,6 +139,7 @@ inductive ListF (α : Type)
 -- Define a type of binary tree
 -- it is a leaf or a node with two subtrees
 inductive BinaryTree (α : Type)
-
+  | leaf
+  | node (left : BinaryTree α) (right : BinaryTree α)
 
 end MyList

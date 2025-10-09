@@ -1,4 +1,3 @@
-
 import Mathlib.Tactic -- imports all of the tactics in Lean's maths library
 
 set_option autoImplicit false
@@ -66,15 +65,57 @@ theorem len_append_fun_induction_oneline (x : ℕ) (l : List ℕ) : len (l ++ [x
 -- # Exercise 3.1: write filter where it takes out items that are not in the list
 def my_filter {α : Type} (p : α → Bool) : List α → List α
 | [] => []
-| a :: as => sorry
+| a :: as => if (p a) then a :: (my_filter p as) else (my_filter p as) -- A possible definition
+-- | a :: as => (if (p a) then [a] else []) ++ (my_filter p as) -- Alternative version
 
-example: my_filter (fun x => x % 2 == 0) [1, 2, 3, 4, 5, 6] = [2,4,6] := sorry
-example: my_filter (fun s => s.startsWith "a") ["apple", "banana", "almond", "kiwi"] =  ["apple", "almond"] := sorry
+example: my_filter (fun x => x % 2 == 0) [1, 2, 3, 4, 5, 6] = [2,4,6] := by
+  repeat unfold my_filter
+  simp_all
+
+example: my_filter (fun s => s.startsWith "a") ["apple", "banana", "almond", "kiwi"] =  ["apple", "almond"] := by
+  -- just "native_decide" here suffices
+  repeat unfold my_filter
+    -- Yields a deeply nested if-else cascade of the shape
+    -- if ("apple".startsWith "a" = true) then ... else ...
+  repeat native_decide
+    -- Decides ("apple".startsWith "a" = true) etc.
+
+#check my_filter.induct
+#check my_filter
 
 -- Prove this:
-theorem filter_append {α : Type} (p : α → Bool) (l1 l2 : List α) :
-  my_filter p (l1 ++ l2) = (my_filter p l1) ++ (my_filter p l2) := by sorry
+theorem filter_append {α : Type} (p : α → Bool) (l1 l2 : List α) : my_filter p (l1 ++ l2) = (my_filter p l1) ++ (my_filter p l2) := by
+  match l1, l2 with
+  | l1, [] =>
+    unfold my_filter
+    simp
+  | [], l2 =>
+    unfold my_filter
+    simp
+  | x :: xs, y :: ys =>
+    nth_rw 1 [my_filter.eq_def]
+    nth_rw 1 [my_filter.eq_def]
+    simp
+    split_ifs
+    . simp only [List.cons_append]
+      simp only [List.cons_inj_right]
+      apply filter_append
+    . apply filter_append
 
+theorem filter_append' {α : Type} (p : α → Bool) (l1 l2 : List α) : my_filter p (l1 ++ l2) = (my_filter p l1) ++ (my_filter p l2) := by
+  fun_induction my_filter p l1
+  . trivial
+  -- all_goals
+  --   nth_rw 1 [my_filter.eq_def]
+  --   simp_all
+  . nth_rw 1 [my_filter.eq_def]
+    -- simp_all suffices
+    simp [h]
+    rw [ih1]
+  . nth_rw 1 [my_filter.eq_def]
+    -- simp_all suffices
+    simp [h]
+    rw [ih1]
 
 -- # Exercise 3.2: write foldl
 -- The foldl function (also known as reduce or fold-left)
@@ -85,7 +126,7 @@ theorem filter_append {α : Type} (p : α → Bool) (l1 l2 : List α) :
 
 def my_foldl {α β : Type} (f : β → α → β) (b : β) : List α → β
 | [] => b
-| a :: as => sorry
+| a :: as => my_foldl f (f b a) as
 
 example: my_foldl (fun acc x => acc + x) 0 [1, 2, 3, 4] = 10 := sorry
 example: my_foldl (fun acc x => x :: acc) ([] : List Nat) [1, 2, 3] = [3, 2, 1] := sorry

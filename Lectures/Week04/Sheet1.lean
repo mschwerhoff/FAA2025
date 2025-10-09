@@ -87,7 +87,6 @@ def T : ℕ → ℕ → ℕ
   | _, 0 => 1 -- Single-line alternative:
   | 0, _ => 1 -- | _, 0 | 0, _ => 1
   | m+1, n+1 => T m (n+1) + T (m+1) n
-  -- | m + 1, n + 1 => T (m-1) n + T m (n-1) -- Alternative but equivalent definition makes proof harder :-/
 
 theorem solve_T (m n: ℕ):  T m n ≤ 2^(m+n) := by
   fun_induction T
@@ -108,5 +107,44 @@ Define C(m,n):
   Prove that C(m,n) = 2^{m*n}
 -/
 
-def C : ℕ → ℕ  → ℕ := sorry
-theorem solve_C (m n: ℕ):  C m n = 2^(m*n)  := by sorry
+def C : ℕ → ℕ  → ℕ
+  | _, 0 | 0, _ => 1
+  | m+1, n+1 => C m (n+1) * C (m+1) n
+
+#check Nat.log_mul_base
+#check Nat.log_pow
+#check Nat.log
+#check Nat.add_left_inj
+#check Nat.add_left_cancel
+
+theorem solve_C (m n: ℕ):  C m n = 2^(m*n)  := by
+  fun_induction C
+  all_goals (expose_names)
+  . norm_num
+  . norm_num
+  . grw [ih1, ih2]
+    simp_all
+
+    ring_nf
+    rw [Nat.mul_right_comm (2 ^ m * 2 ^ (m * n)) (2 ^ n) 2]
+    refine (Nat.mul_left_inj ?_).mpr ?_
+    . simp
+    . rw [mul_assoc (2 ^ m) (2 ^ (m * n)) 2]
+      refine (Nat.mul_right_inj ?_).mpr ?_
+      . simp
+      . rw [← pow_succ 2 (m * n)]
+        -- Remaining goal: 2 ^ (m * n * 2) = 2 ^ (m * n + 1) -- Why should that hold?
+        sorry
+
+    rw [← pow_add 2 (m * (n + 1)) ((m + 1) * n)]
+    rw [Nat.pow_right_inj ?_]
+    . ring_nf
+      refine Nat.add_left_inj.mpr ?_
+      rw [Nat.add_comm 1 m]
+      rw [add_assoc m 1 (m * n)]
+      refine Nat.add_left_cancel_iff.mpr ?_
+      rw [Nat.mul_two (m * n)]
+      refine Nat.add_left_inj.mpr ?_
+      -- Remaining goal: m*n = 1 -- Why should that hold?
+      sorry
+    . trivial
