@@ -85,12 +85,36 @@ theorem problem2' (n: ℕ) (h: 0 < n): (S n 1) = 1 := by
      --           to "e = e", without closing the proof goal just yet?
     simp
 
+#check mul_pow_sub_one
 -- # Problem 3
 -- This is a continuation of Problem 2
 -- You may want to use the result from theorem problem2 to prove problem3
+#check problem2
+#check Nat.pow_le_pow_right
 theorem problem3 (n: ℕ): (S n 2) = 2^(n-1) - 1  := by
-  sorry
-
+  induction n with
+  | zero =>
+    trivial
+  | succ m ih =>
+    unfold S
+    simp_all
+    by_cases m_eq_zero : m = 0
+    . simp_all
+      unfold S
+      rfl
+    . by_cases m_eq_one : m = 1
+      . simp_all
+      . simp_all
+        have zero_lt_m : 0 < m := by omega
+        rw [Nat.mul_sub_one 2 (2 ^ (m - 1))]
+        rw [problem2 m zero_lt_m]
+        nth_rw 1 [mul_pow_sub_one m_eq_zero]
+        rw [← Nat.sub_add_comm ?_]
+        . trivial
+        . have two_lte_m : 2 ≤ m := by omega
+          exact calc 2 ≤ 4 := by trivial
+                _ = 2^2 := by trivial
+                _ ≤ 2^m := (Nat.pow_le_pow_right (by decide : 2 > 0) two_lte_m)
 
 -- # Problem 4
 /-
