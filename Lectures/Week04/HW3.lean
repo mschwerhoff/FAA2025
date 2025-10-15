@@ -133,11 +133,47 @@ def R (r s : ℕ ): ℕ :=
 
 -- You may find this useful
 #check Nat.choose_eq_choose_pred_add
+#check Nat.choose_symm
 
 -- Hint: you may find functional induction useful
 lemma problem4 (r s : ℕ): R r s ≤ (r+s-2).choose (r-1) := by
-  sorry
-
+  fun_induction R r s
+  . norm_num
+  . simp_all
+    obtain ⟨hl, hr⟩ := h
+    cases h_1 with
+    | inl hl' =>
+      simp_all
+    | inr hr' =>
+      rw [Nat.le_one_iff_eq_zero_or_eq_one] at hr'
+      simp_all
+  . simp_all
+    obtain ⟨hl, hr⟩ := h
+    obtain ⟨hl', hr'⟩ := h_1
+    cases h_2 with
+    | inl hl'' =>
+      simp_all
+      linarith
+    | inr hr'' =>
+      simp_all
+      rw [Nat.choose_symm]
+      . simp_all
+        omega
+      . omega
+  . simp_all
+    obtain ⟨hl, hr⟩ := h
+    obtain ⟨hl1, hr1⟩ := h_1
+    obtain ⟨hl2, hr2⟩ := h_2
+    grw [ih1, ih2]
+    rw [← Nat.sub_add_comm ?_]
+    . rw [Nat.sub_right_comm (r_1 + s_1) 1 2]
+      rw [← add_tsub_assoc_of_le ?_ r_1]
+      . rw [Nat.sub_right_comm (r_1 + s_1) 1 2]
+        rw [← Nat.choose_eq_choose_pred_add]
+        . omega
+        . omega
+      . omega
+    . omega
 
 -- # Problem 5.1
 
