@@ -21,6 +21,8 @@ def factorial : ℕ → ℕ
 
 notation:10000 n "!" => factorial n
 
+-- In Lean, every recursively defined function is equipped with functional induction
+#check factorial.induct
 -- Recall induction proof
 lemma fact (n :ℕ) : 1 ≤ n ! := by
   induction' n with n ih
@@ -29,15 +31,43 @@ lemma fact (n :ℕ) : 1 ≤ n ! := by
     grw [← ih]
     exact NeZero.one_le
 
+--lemma fact' (n :ℕ) : 1 ≤ n ! := by
+--  fun_induction
+
+
+-- Pascal's triangle
 def P : ℕ → ℕ → ℕ
-  | _, 0 => 1
-  | 0, _ + 1 => 1
+  | x, 0 => 1
+  | 0, y + 1 => 1
   | a + 1, b + 1 => P (a + 1) b + P a (b + 1)
 
+-- Equivalently
+def P' (a b :ℕ) : ℕ :=
+  match a, b with
+  | a, 0 => 1
+  | 0, b + 1 => 1
+  | a + 1, b + 1 => P' (a + 1) b + P' a (b + 1)
+
+-- Equivalently
+def P_ie (a b :ℕ) : ℕ :=
+  if a = 0 ∨ b = 0 then 1
+  else P_ie a (b-1) + P_ie (a-1) b
+
+#check P_ie.induct
+
+lemma P_eq: P = P_ie := by -- Will come back later
+  ext a b
+  fun_induction P a b <;> all_goals (expose_names)
+  · simp [P_ie]
+  · simp [P_ie]
+  · rw [ih1,ih2]
+    nth_rw 3 [P_ie]
+    simp only [Nat.succ_eq_add_one, Nat.add_eq_zero, one_ne_zero, and_false, or_self, ↓reduceIte,
+      add_tsub_cancel_right]
 
 -- In Lean, every recursively defined function is equipped with functional induction
-#check P.induct
-#check P.induct_unfolding
+#check P_ie.induct
+#check P_ie.induct_unfolding
 
 #eval [P 0 0]
 #eval [P 0 1,P 1 0]
@@ -52,7 +82,7 @@ lemma P_le_fact ( a b : ℕ ): P a b ≤ (a+b)! := by
   · simp only [add_zero]
     exact fact x
   · simp only [Nat.succ_eq_add_one, zero_add]
-    exact fact (n + 1)
+    exact fact (y + 1)
   · grw [ih1,ih2]
     clear * -; grind [fact,factorial] -- grind for algebraic proofs
 
