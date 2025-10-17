@@ -13,17 +13,64 @@ def isEven (n :ℕ) : Prop := ∃k, n = 2*k
 
 -- Your AllEven must use isEven function above
 inductive AllEven : List ℕ → Prop
+  | nil : AllEven []
+  | singleton (x : ℕ) : isEven x → AllEven [x]
+  | cons (x : ℕ) (xs : List ℕ) : isEven x → AllEven xs → AllEven (x :: xs)
 
 -- Prove that your AllEven predicate is equivalent to checking if every element in the list is even.
 -- Let's split into two parts
 
 -- # Part 1
 theorem Problem1_1 (l : List ℕ)  :
-  AllEven l → ∀ n ∈ l, isEven n := by sorry
+  AllEven l → ∀ n ∈ l, isEven n := by
+    intro lhs n n_in_l
+    induction' lhs
+    -- all_goals grind suffices
+    . -- base case n ∈ l = []
+      unfold isEven
+      trivial
+    . -- base case n ∈ l = [x]
+      unfold isEven
+      unfold isEven at a
+      -- grind suffices
+      obtain ⟨k, h2⟩ := a
+      use k
+      rw [← h2]
+      rw [List.mem_singleton] at n_in_l
+      exact n_in_l
+    . -- inductive case n ∈ l = x :: xs
+      unfold isEven
+      rw [List.mem_cons] at n_in_l
+      -- grind [isEven] suffices
+      rcases n_in_l
+      . -- n = x
+        -- grind [isEven] suffices
+        unfold isEven at a
+        obtain ⟨k, h2⟩ := a
+        use k
+        rw [← h2]
+        exact h
+      . -- n ∈ xs
+        -- grind [isEven] suffices
+        apply a_ih at h
+        unfold isEven at h
+        obtain ⟨k, h2⟩ := h
+        use k
 
 -- # Part 2
 theorem Problem1_2 (l : List ℕ)  :
-  (h : ∀ n ∈ l, isEven n) → AllEven l := by sorry
+  (h : ∀ n ∈ l, isEven n) → AllEven l := by
+    intro lhs
+    unfold isEven at lhs
+    induction' l
+    . exact AllEven.nil
+    . rw [List.forall_mem_cons] at lhs
+      obtain ⟨h_head, h_tail⟩ := lhs
+      have iseven_head : (isEven head) := h_head
+      -- observe iseven_head : (isEven head) -- QUESTION: This yields "iseven_head : ∃ k, head = 2 * k",
+      --                                     --           but not "iseven_head : (isEven head)". Why?
+      apply tail_ih at h_tail
+      exact (AllEven.cons head tail iseven_head h_tail)
 
 -- # Sorted
 -- We will use the following version of Sorted

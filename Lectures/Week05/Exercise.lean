@@ -14,7 +14,9 @@ inductive IsPalindrome {α : Type} : List α → Prop
 --  | cons_eq (a : α) (l : List α) :  ??
 
 theorem IsPalindrome_imp_eq_reverse {α : Type} (l : List α) :
-  IsPalindrome l → l = List.reverse l := by sorry
+  IsPalindrome l → l = List.reverse l := by
+    intro h
+    induction' h
 
 theorem IsPalindrome_pmi_eq_reverse {α : Type} (l : List α) :
   l = List.reverse l → IsPalindrome l  := by sorry

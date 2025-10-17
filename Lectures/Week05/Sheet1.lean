@@ -73,13 +73,36 @@ inductive IsEven2 : ℕ → Prop
 | plus_two (n:ℕ): IsEven2 n → IsEven2 (n+4)
 
 -- Exercise 1.1
-theorem soundness_IsEven2 (n:ℕ ):  IsEven2 n → evenFun n := by sorry
+theorem soundness_IsEven2 (n:ℕ ):  IsEven2 n → evenFun n := by
+  intro h
+  induction' h with n ih
+  · use 0
+  · obtain ⟨x, xh⟩ := a_ih
+    rw [xh]
+    use x + 2
+    rfl
 
 -- Do it together
-theorem completeness_isEven (n : ℕ): evenFun n → IsEven n := by sorry
+theorem completeness_isEven (n : ℕ): evenFun n → IsEven n := by
+  intro h
+  rw [evenFun] at h
+  obtain ⟨h, hk⟩ := h
+  subst hk
+  induction' h
+  · simp
+    exact .zero
+  · apply IsEven.plus_two
+    simp
+    exact a
+
 
 -- Exercise 1.2
-theorem incompleteness_isEven2 : ∃ n, evenFun n ∧ ¬ IsEven2 n := by sorry
+theorem incompleteness_isEven2 : ∃ n, evenFun n ∧ ¬ IsEven2 n := by
+  use 2
+  constructor
+  · simp
+  · by_contra!
+    trivial
 
 /- Summary
 -- By analogy, the proof strategy for inductive predicates is similar to that of the disjunction.
