@@ -37,6 +37,37 @@ def contains_bs {n :ℕ }(arr : SortedArrayFun n) (q : ℕ) : Option ℕ :=
     else if  arr.get mid < q then bs_aux (mid+1) b (by omega)
     else some mid
 
+-- Hints below
+theorem subinterval_to_interval_qlt {n : ℕ} (arr : SortedArrayFun n) (q a mid b: ℕ)
+    (h_bounds : a ≤ mid ∧ mid ≤ b)  -- [[a q⁻¹ mid] b]:
+    (h_q: q < arr.get mid):
+    (∃ i, a ≤ i ∧ i ≤ b ∧ arr.get i = q) ↔ (∃ i, a ≤ i ∧ i ≤ mid ∧ arr.get i = q)  := by
+    constructor
+    . intro lhs
+      obtain ⟨i, hi⟩ := lhs
+      use i
+      suffices i ≤ mid by simp_all -- or tauto, grind
+      obtain ⟨_, _, hiq⟩ := hi
+      rw [← hiq] at h_q
+      have get_is_mono : Monotone arr.get := arr.sorted
+      unfold Monotone at get_is_mono
+      by_contra hcon
+      simp at hcon
+      have mid_leq_i : mid ≤ i := by linarith
+      apply get_is_mono at mid_leq_i
+      linarith
+    . intro lhs
+      obtain ⟨i, hi⟩ := lhs
+      use i
+      suffices i ≤ b by simp_all
+      linarith
+
+-- Exercise
+theorem subinterval_to_interval_qgt {n : ℕ} (arr : SortedArrayFun n) (q a mid b: ℕ)
+  (h_bounds : a ≤ mid ∧ mid ≤ b)  -- [a [mid q⁻¹ b]]:
+  (h_q: arr.get mid < q ):
+  (∃ i, a ≤ i ∧ i ≤ b ∧ arr.get i = q) ↔ (∃ i, (mid+1) ≤ i ∧ i ≤ b ∧ arr.get i = q)  := by sorry
+
 -- The property we need is: "Searching in the interval [a, b] finds q if and only if q is present in that interval."
 #check contains_bs.bs_aux
 lemma bs_aux_correctness (n q :ℕ)(arr : SortedArrayFun n) (a b :ℕ)(h_le : a ≤ b) :
@@ -50,9 +81,13 @@ lemma bs_aux_correctness (n q :ℕ)(arr : SortedArrayFun n) (a b :ℕ)(h_le : a 
       subst this
       aesop
     · rw [← ih1]
-      sorry
+      have h_boxed : a_1 ≤ mid ∧ mid ≤ b_1 := by grind
+      exact subinterval_to_interval_qlt arr q a_1 mid b_1 h_boxed h_2
+      -- or directly
+      --     exact subinterval_to_interval_qlt arr q a_1 mid b_1 (by grind) h_2
+      -- instead of the two preceding lines
     · rw [← ih1]
-      sorry
+      sorry -- structurally analogous
     · simp_all
       use mid
       grind
@@ -63,17 +98,3 @@ theorem contains_bs_correctness (n q :ℕ)(h: 0 < n)(arr : SortedArrayFun n):
   have: 0 ≤ n-1 := by omega
   have := bs_aux_correctness n q arr 0 (n-1) (by omega)
   grind
-
-/-
--- Hints below
-theorem subinterval_to_interval_qlt {n : ℕ} (arr : SortedArrayFun n) (q a mid b: ℕ)
-  (h_bounds : a ≤ mid ∧ mid ≤ b)  -- [[a q⁻¹ mid] b]:
-  (h_q: q < arr.get mid):
-  (∃ i, a ≤ i ∧ i ≤ b ∧ arr.get i = q) ↔ (∃ i, a ≤ i ∧ i ≤ mid ∧ arr.get i = q)  := by sorry
-
--- Exercise
-theorem subinterval_to_interval_qgt {n : ℕ} (arr : SortedArrayFun n) (q a mid b: ℕ)
-  (h_bounds : a ≤ mid ∧ mid ≤ b)  -- [a [mid q⁻¹ b]]:
-  (h_q: arr.get mid < q ):
-  (∃ i, a ≤ i ∧ i ≤ b ∧ arr.get i = q) ↔ (∃ i, (mid+1) ≤ i ∧ i ≤ b ∧ arr.get i = q)  := by sorry
--/

@@ -32,13 +32,57 @@ def Nat.MinOfList (a :ℕ ) (t: List ℕ) : Prop := ∀ y ∈ t, a ≤ y
 -- You can use the following APIs.
 -- # In this problem, prove that the FindMin algorithm correctly returns the minimum element for any non-empty input list of size n.
 -- You may find the following theorems useful
-theorem x_minlist_of_x_lt_minlist {x y: ℕ} {l: List ℕ } (h1: x ≤ y) (h2 : y.MinOfList l) : x.MinOfList l := by grind [Nat.MinOfList]
-theorem min_list_of_left_right {x : ℕ} {l : List ℕ} (left right: List ℕ) (h_lr: left ++ right = l)
-(h_min_left: x.MinOfList left)(h_min_right: x.MinOfList right): x.MinOfList (l) := by grind [Nat.MinOfList]
+theorem x_minlist_of_x_lt_minlist {x y: ℕ} {l: List ℕ }
+      (h1: x ≤ y)
+      (h2: y.MinOfList l)
+    : x.MinOfList l := by
+  grind [Nat.MinOfList]
+
+theorem min_list_of_left_right {x : ℕ} {l : List ℕ}
+      (left right: List ℕ)
+      (h_lr: left ++ right = l)
+      (h_min_left: x.MinOfList left)
+      (h_min_right: x.MinOfList right)
+    : x.MinOfList l := by
+  grind [Nat.MinOfList]
 
 theorem Problem1 (l : List ℕ) (h_nonempty : l.length > 0) :
-   let z := FindMin l
-   z.MinOfList l := by sorry
+    let z := FindMin l
+    z.MinOfList l := by
+  fun_induction FindMin l
+  . trivial
+  . simp
+    unfold Nat.MinOfList
+    rw [List.forall_mem_singleton]
+  . simp_all
+    -- TODO: Replace grind by manual steps to understand what happens here
+    have hll : 0 < left.length := by grind
+    have hrl : 0 < right.length := by grind
+    -- apply ih1 at hrl
+    -- apply ih2 at hll
+    simp_all -- also performs preceding IH applications
+    unfold minimum
+    split_ifs
+    . rename_i min_is_left
+      change (FindMin left).MinOfList (x :: xs)
+      have h' : n = xs.length + 1 := by trivial
+      rw [← h'] at min_is_left
+
+      have hleft : left = List.take (n / 2) (x :: xs) := by rfl
+      have hright : right = List.drop (n / 2) (x :: xs) := by rfl
+      rw [← hleft] at min_is_left
+      rw [← hright] at min_is_left
+
+      have h'' : (left ++ right) = (x :: xs) := by aesop -- TODO: Manual steps?
+      -- grind [Nat.MinOfList] suffices
+      have min_is_left' : FindMin left ≤ FindMin right := Nat.le_of_lt min_is_left
+      have ih1' : (FindMin left).MinOfList right := by exact x_minlist_of_x_lt_minlist min_is_left' ih1
+      have h''' := @min_list_of_left_right (FindMin left) (x :: xs) left right h'' ih2 ih1'
+      exact h'''
+    . rename_i min_is_right
+      simp at min_is_right
+      have h'' : (left ++ right) = (x :: xs) := by aesop
+      grind [Nat.MinOfList]
 
 -- # Problem 2: Finding Min Sequentially
 -- Define minimum property

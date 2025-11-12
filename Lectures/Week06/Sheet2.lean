@@ -52,13 +52,52 @@ theorem mem_either_merge_auto (xs ys : List ℕ) (z : ℕ)
 
 -- Let's break down the proof and see how to prove this by ``hand``.
 -- Exercise 2.1: try to prove this using either recursion or functional induction (don't use grind on the inductive step)
-theorem mem_either_merge (xs ys : List ℕ) (z : ℕ)
-  (hz : z ∈ Merge xs ys) : z ∈ xs ∨ z ∈ ys := by sorry
+theorem mem_either_merge (xs ys : List ℕ) (z : ℕ) (hz : z ∈ Merge xs ys) : z ∈ xs ∨ z ∈ ys := by
+  fun_induction Merge xs ys
+  . -- aesop suffices
+    left; exact hz
+  . -- aesop suffices
+    right; exact hz
+  . -- aesop suffices
+    simp_all
+    cases hz
+    . left; left; exact h_1
+    . -- aesop suffices
+      apply ih1 at h_1
+      cases h_1
+      . left; right; exact  h_2
+      . cases h_2
+        . right; left; exact h_1
+        . right; right; exact  h_1
+  . -- aesop suffices
+    simp_all
+    cases hz
+    . right; left; exact h_1
+    . aesop -- same structure as in previous case
+
+-- By Martin Shen (https://moodle-app2.let.ethz.ch/mod/forum/discuss.php?d=175442#p369724)
+theorem mem_either_merge' (xs ys : List ℕ) (z : ℕ) (hz : z ∈ Merge xs ys) : z ∈ xs ∨ z ∈ ys := by
+  fun_induction Merge <;> (simp_all; try tauto)
+
+-- By Sonja Joost (https://moodle-app2.let.ethz.ch/mod/forum/discuss.php?d=175442#p369719)
+theorem mem_either_merge'' (xs ys : List ℕ) (z : ℕ) (hz : z ∈ Merge xs ys) : z ∈ xs ∨ z ∈ ys := by
+  fun_induction Merge xs ys
+  · left
+    exact hz
+  · right
+    exact hz
+  · by_cases zin : z = x
+    · simp_all
+    · simp_all
+  · by_cases zin : z = y
+    · simp_all
+    · simp_all
 
 -- Exercise 2.2: use mem_either_merge to prove the following.
 #check mem_either_merge
 theorem min_all_merge (x : ℕ) (xs ys: List ℕ)
- (hxs : x.MinOfList xs) (hys : x.MinOfList ys) : x.MinOfList (Merge xs ys):= by sorry
+    (hxs : x.MinOfList xs) (hys : x.MinOfList ys) : x.MinOfList (Merge xs ys):= by
+  sorry
 
 -- We are ready to prove the main sorted merge.
 -- discuss a proof
