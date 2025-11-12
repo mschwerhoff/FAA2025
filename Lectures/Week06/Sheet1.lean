@@ -55,6 +55,32 @@ else
 -- Let's assume sorted_merge for now; we will prove sorted_merge in the next sheet
 theorem sorted_merge(l1 l2 : List ℕ)(hxs: Sorted l1) (hys: Sorted l2): Sorted (Merge l1 l2) := by sorry
 
+#check Sorted
 #check MergeSort.induct
 -- Exercise 1.1: use sorted_merge theorem to prove that MergeSort outputs a sorted list
-theorem MS_Sorted (xs : List ℕ ): Sorted (MergeSort xs) := by sorry
+theorem MS_Sorted (xs : List ℕ ): Sorted (MergeSort xs) := by
+  fun_induction MergeSort xs
+  . rename List ℕ => xs -- case xs.length < 2
+    cases xs
+    . exact Sorted.nil
+    . simp [Nat.add_lt_iff_lt_sub_right] at h
+        -- The simp step turns
+        --    (head :: tail).length < 2
+        -- into
+        --     tail = []
+        -- The simp step must involve more than just the explicitly mentioned lemma, though
+        -- since simp only [...] does not suffice.
+      rw [h]
+      exact Sorted.single head
+      ------------------
+    -- . simp [List.length] at h
+    --   grind [List.eq_nil_of_length_eq_zero, Nat.MinOfList, Sorted.nil, Sorted.cons_min] -- Nat.MinOfList not needed
+      ------------------
+    -- . simp [List.length] at h
+    --   have h_tail_length : tail.length = 0 := by sorry
+    --   have h_tail_emp : tail = [] := List.eq_nil_of_length_eq_zero h_tail_length
+    --   have h' : head.MinOfList tail := by sorry
+    --   have h'' := Sorted.nil
+    --   rw [← h_tail_emp] at h''
+    --   apply Sorted.cons_min head tail h' h''
+  . exact sorted_merge l1' l2' ih2 ih1
