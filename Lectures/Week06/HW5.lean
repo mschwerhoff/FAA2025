@@ -161,5 +161,16 @@ def contains_bs {n :ℕ }(arr : SortedArrayFun n) (q : ℕ) : Option ℕ :=
     else if  arr.get mid < q then bs_aux (mid+1) b (by omega)
     else some mid
 
+lemma Problem5_aux (n q :ℕ)(arr : SortedArrayFun n) (a b :ℕ)(h_le : a ≤ b) :
+    ∀ i, contains_bs.bs_aux arr q a b h_le = some i → arr.get i = q := by
+  fun_induction contains_bs.bs_aux <;> simp_all -- discharges all but one goal - grind discharges all
+  linarith
+
 theorem Problem5 (n q :ℕ)(h: 0 < n)(arr : SortedArrayFun n):
-    ∀ i, contains_bs arr q = some i → arr.get i = q := by sorry
+    ∀ i, contains_bs arr q = some i → arr.get i = q := by
+  intro i lhs
+  -- grind [contains_bs, Problem5_aux] suffices
+  unfold contains_bs at lhs
+  have h_aux := Problem5_aux n q arr 0 (n-1) (by linarith) i
+  apply h_aux at lhs
+  exact lhs
