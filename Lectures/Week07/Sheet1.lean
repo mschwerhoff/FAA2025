@@ -8,8 +8,9 @@ set_option tactic.hygienic false
 
 def has_sqrt (n : ℕ) : Prop := ∃ m : ℕ, m * m = n
 def sqrt_if_perfect (n : ℕ) (h : has_sqrt n) : 1=1 := by
---  obtain
-  sorry --? How to extract the witness
+  unfold has_sqrt at h
+  obtain ⟨m, hm⟩ := h
+  rfl
 
 -- In Lean, you can use `Classical.choose`.
 #check Classical.choose
@@ -56,6 +57,7 @@ def some_prop : Prop := 1 = 1
 
 def sqrt_if_perfect2 (n : ℕ) (h : has_sqrt n) : some_prop := by
   obtain ⟨n,nh⟩ := h
+  -- trivial suffices
   sorry
 
 -- The key architectural decision in Lean: Prop is proof-irrelevant and computationally erased.
@@ -116,17 +118,21 @@ def example2 : BitonicSortedArrayFun 100 where
 noncomputable
 def BitonicSortedArrayFun.peak_idx {n :ℕ} (arr: BitonicSortedArrayFun n) := (arr.bitonic).choose
 
-lemma BitonicSortedArrayFun.peak_idx_spec {n :ℕ} (arr: BitonicSortedArrayFun n) : arr.peak_idx < n ∧
-  StrictMonoOn arr.get (Set.Icc 0 arr.peak_idx) ∧ StrictAntiOn arr.get (Set.Ici arr.peak_idx) := (arr.bitonic).choose_spec
+#check BitonicSortedArrayFun.peak_idx
+
+lemma BitonicSortedArrayFun.peak_idx_spec {n :ℕ} (arr: BitonicSortedArrayFun n) :
+    arr.peak_idx < n ∧
+    StrictMonoOn arr.get (Set.Icc 0 arr.peak_idx) ∧
+    StrictAntiOn arr.get (Set.Ici arr.peak_idx)
+  := (arr.bitonic).choose_spec
 
 
 -- The followings consist of exercises to get familiar with choose and choose_spec
 
 -- Example 1: Prove the peak index is bounded
-lemma BitonicSortedArrayFun.peak_idx_lt_size {n : ℕ} (arr : BitonicSortedArrayFun n) :
-    arr.peak_idx < n := by
-    have:= arr.peak_idx_spec
-    exact this.1
+lemma BitonicSortedArrayFun.peak_idx_lt_size {n : ℕ} (arr : BitonicSortedArrayFun n) : arr.peak_idx < n := by
+  have:= arr.peak_idx_spec
+  exact this.1
 
 #print axioms BitonicSortedArrayFun.peak_idx_lt_size
 #check propext
@@ -134,15 +140,45 @@ lemma BitonicSortedArrayFun.peak_idx_lt_size {n : ℕ} (arr : BitonicSortedArray
 
 -- Exercise 2: Prove monotonicity up to peak
 lemma BitonicSortedArrayFun.mono_before_peak {n : ℕ} (arr : BitonicSortedArrayFun n) :
-    StrictMonoOn arr.get (Set.Icc 0 arr.peak_idx) := by sorry
+    StrictMonoOn arr.get (Set.Icc 0 arr.peak_idx) := by
+  have h_spec := arr.peak_idx_spec
+  exact h_spec.2.1
 
 -- Exercise 3: Prove that any element before peak is less than peak value
 -- Hint: Combine choose_spec with StrictMonoOn properties
 lemma BitonicSortedArrayFun.before_peak_lt_peak {n : ℕ} (arr : BitonicSortedArrayFun n)
-    (i : ℕ) (hi : i < arr.peak_idx) :
-    arr.get i < arr.get arr.peak_idx := by sorry
+    (i : ℕ) (hi : i < arr.peak_idx) : arr.get i < arr.get arr.peak_idx := by
+  -- Extract relevant specification of the peak: that the array is monotonic up to peak
+  obtain ⟨h_bound, ⟨h_mono, h_anti⟩⟩ := arr.peak_idx_spec
+  clear h_bound h_anti
+  -- set left_half := Set.Icc 0 arr.peak_idx -- useful for factoring our a common subterm into a dedicated term/assumption
+  -- All that's left is to conclude from
+  --   h_mono : StrictMonoOn arr.get (Set.Icc 0 arr.peak_idx)
+  -- the final proof goal, i.e.
+  --   arr.get i < arr.get arr.peak_idx
+  -- That requires knowing that
+  --   a) i ∈ [0, arr.peak_idx]
+  --   b) arr.peak_idx ∈ [0, arr.peak_idx]
+  -- Let's create term a) first:
+  have i_mem : i ∈ (Set.Icc 0 arr.peak_idx) := by
+    have lower : 0 ≤ i := by linarith -- follows from i : ℕ
+    have upper : i ≤ arr.peak_idx := by linarith -- follows from i < arr.peak_idx (obtained from "le_of_lt hi")
+    exact ⟨lower, upper⟩
+  -- aesop suffices at this point
+  -- Now let's create term b) in an analogous fashion:
+  have peak_mem : arr.peak_idx ∈ (Set.Icc 0 arr.peak_idx) := by simp_all
+    -- have lower : 0 ≤ arr.peak_idx := Nat.zero_le arr.peak_idx
+    -- have upper : arr.peak_idx ≤ arr.peak_idx := le_rfl
+    -- exact ⟨lower, upper⟩
+  -- grind [StrictMonoOn] suffice at this point
+  have h_mono' : arr.get i < arr.get arr.peak_idx := h_mono i_mem peak_mem hi
+  exact h_mono'
 
 -- Exercise 4: Prove that any element after peak is less than peak value
 lemma BitonicSortedArrayFun.after_peak_lt_peak {n : ℕ} (arr : BitonicSortedArrayFun n)
-    (i : ℕ) (hi : i > arr.peak_idx) :
-    arr.get i < arr.get arr.peak_idx := by sorry
+    (i : ℕ) (hi : i > arr.peak_idx) : arr.get i < arr.get arr.peak_idx := by
+  obtain h_anti := arr.peak_idx_spec.2.2
+  have i_mem : i ∈ (Set.Ici arr.peak_idx) := by
+    rw [Set.mem_Ici]
+    linarith
+  aesop -- Rest should be analogous to lemma "before_peak_lt_peak"
